@@ -87,9 +87,19 @@ Statement = function(self)
     expect(2, sql, {
       "string"
     })
+    if not (sql:match(";$")) then
+      sql = sql .. ";"
+    end
+    if not (sqlite.complete(sql)) then
+      error("Not a valid SQL statement: [[" .. tostring(sql) .. "]]")
+    end
+    local stat = self.db:prepare(sql)
+    if "userdata" ~= typeof(stat) then
+      error("Could not prepare statement: [[" .. tostring(sql) .. "]], (" .. tostring(stat) .. ")")
+    end
     return typeset({
       sql = sql,
-      stat = self.db:prepare(sql)
+      stat = stat
     }, "Statement")
   end
 end
@@ -407,15 +417,15 @@ Transaction = function(self)
     if not (upd("SAVEPOINT grasp_savepoint")) then
       error("Could not start transaction (grasp_savepoint)")
     end
-    local ok, ret = pcall(function()
+    local ok = pcall(function()
       return fn(self)
     end)
-    if ok and ret then
+    if ok then
       upd("RELEASE grasp_savepoint")
     else
       upd("ROLLBACK TO grasp_savepoint")
     end
-    return ok, ret
+    return ok
   end
 end
 return {
