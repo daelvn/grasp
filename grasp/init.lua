@@ -14,7 +14,6 @@ local OPEN_NOMUTEX = sqlite.OPEN_NOMUTEX
 local OPEN_FULLMUTEX = sqlite.OPEN_FULLMUTEX
 local OPEN_SHAREDCACHE = sqlite.OPEN_SHAREDCACHE
 local OPEN_PRIVATECACHE = sqlite.OPEN_PRIVATECACHE
-local OPEN_NOFOLLOW = sqlite.OPEN_NOFOLLOW
 local OK = sqlite.OK
 local Database
 Database = function(filename, attr)
@@ -68,9 +67,6 @@ Database = function(filename, attr)
   end
   if attr.cache == "private" then
     flags = flags + OPEN_PRIVATECACHE
-  end
-  if not attr.follow then
-    flags = flags + OPEN_NOFOLLOW
   end
   return typeset({
     filename = filename,
@@ -432,7 +428,6 @@ return {
   OPEN_CREATE = OPEN_CREATE,
   OPEN_FULLMUTEX = OPEN_FULLMUTEX,
   OPEN_MEMORY = OPEN_MEMORY,
-  OPEN_NOFOLLOW = OPEN_NOFOLLOW,
   OPEN_NOMUTEX = OPEN_NOMUTEX,
   OPEN_PRIVATECACHE = OPEN_PRIVATECACHE,
   OPEN_READONLY = OPEN_READONLY,

@@ -15,7 +15,6 @@ OPEN_NOMUTEX      = sqlite.OPEN_NOMUTEX
 OPEN_FULLMUTEX    = sqlite.OPEN_FULLMUTEX
 OPEN_SHAREDCACHE  = sqlite.OPEN_SHAREDCACHE
 OPEN_PRIVATECACHE = sqlite.OPEN_PRIVATECACHE
-OPEN_NOFOLLOW     = sqlite.OPEN_NOFOLLOW
 OK                = sqlite.OK
 
 -- Database :: (string, table) -> Database
@@ -33,7 +32,6 @@ OK                = sqlite.OK
 --   memory :: boolean
 --   mutex :: boolean
 --   cache :: string [shared|private]
---   follow :: boolean
 --   volatile :: boolean
 Database = (filename, attr={create: true, rw: true}) ->
   expect 1, filename, {"string"}
@@ -60,7 +58,6 @@ Database = (filename, attr={create: true, rw: true}) ->
   flags += OPEN_FULLMUTEX    if attr.mutex
   flags += OPEN_SHAREDCACHE  if attr.cache == "shared"
   flags += OPEN_PRIVATECACHE if attr.cache == "private"
-  flags += OPEN_NOFOLLOW     if not attr.follow
   -- return object
   return typeset {
     :filename
@@ -310,7 +307,7 @@ Transaction ==>
     return ok
 
 {
-  :OPEN_CREATE, :OPEN_FULLMUTEX, :OPEN_MEMORY, :OPEN_NOFOLLOW, :OPEN_NOMUTEX
+  :OPEN_CREATE, :OPEN_FULLMUTEX, :OPEN_MEMORY, :OPEN_NOMUTEX
   :OPEN_PRIVATECACHE, :OPEN_READONLY, :OPEN_READWRITE, :OPEN_SHAREDCACHE, :OPEN_URI,
   :OK
   

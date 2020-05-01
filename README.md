@@ -23,7 +23,6 @@ uri :: boolean
 memory :: boolean
 mutex :: boolean
 cache :: string [shared|private]
-follow :: boolean
 volatile :: boolean
 ```
 
