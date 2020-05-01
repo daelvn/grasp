@@ -156,7 +156,7 @@ env = {
       if not (env.always) then
         this = this .. " IF NOT EXISTS"
       end
-      this = this .. " " .. tostring(name)
+      this = this .. " " .. tostring(norm(name))
       this = this .. "(\n"
       for name, value in pairs(retv.columns) do
         this = this .. "  " .. tostring(name) .. " " .. tostring(value) .. ",\n"
@@ -213,12 +213,12 @@ env = {
         this = this .. " OR IGNORE"
       end
       if env.name or into then
-        this = this .. " INTO " .. tostring(env.name)
+        this = this .. " INTO " .. tostring(norm(env.name))
       else
         error("sql.insert: Expected 'into <name>'")
       end
       if env.alias then
-        this = this .. " AS " .. tostring(env.alias)
+        this = this .. " AS " .. tostring(norm(env.alias))
       end
       this = this .. "("
       local _max_0 = #keys - 1
@@ -267,7 +267,7 @@ env = {
       end
       this = this .. " " .. tostring(res)
       if env.name or fr then
-        this = this .. " FROM " .. tostring(env.name)
+        this = this .. " FROM " .. tostring(norm(env.name))
       else
         error("sql.select: Expected 'From <name>'")
       end
@@ -302,7 +302,7 @@ env = {
       env.name = env.name or fr
       local this
       if env.name then
-        this = "DELETE FROM " .. tostring(env.name)
+        this = "DELETE FROM " .. tostring(norm(env.name))
       else
         error("sql.delete: Expected 'From <name>'")
       end
@@ -329,7 +329,7 @@ env = {
       if not (env.always) then
         this = this .. " IF EXISTS"
       end
-      this = this .. " " .. tostring(name) .. ";"
+      this = this .. " " .. tostring(norm(name)) .. ";"
       env.emit(this)
       return env.reset()
     end
@@ -362,7 +362,7 @@ env = {
       env.ignore = true
     end,
     into = function(name)
-      env.name = name
+      env.name = norm(name)
     end,
     alias = function(name)
       env.alias = name
@@ -381,7 +381,7 @@ env = {
       env.all = true
     end,
     From = function(name)
-      env.name = name
+      env.name = norm(name)
     end,
     order = function(ord)
       env.order = ord
@@ -406,7 +406,7 @@ env = {
   },
   delete = {
     From = function(name)
-      env.name = name
+      env.name = norm(name)
     end,
     where = function(any)
       if "table" == type(any) then

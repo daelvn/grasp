@@ -96,7 +96,7 @@ env = {
       this ..= " TEMPORARY" if env.temp
       this ..= " TABLE"
       this ..= " IF NOT EXISTS" unless env.always
-      this ..= " #{name}"
+      this ..= " #{norm name}"
       this ..= "(\n"
       this ..= "  #{name} #{value},\n" for name, value in pairs retv.columns
       this ..= ")"
@@ -116,13 +116,13 @@ env = {
       env.name or= into
       --
       this   = replace and "REPLACE" or "INSERT"
-      this ..= " OR REPLACE"       if env.replace
-      this ..= " OR ROLLBACK"      if env.rollback
-      this ..= " OR ABORT"         if env.abort
-      this ..= " OR FAIL"          if env.fail
-      this ..= " OR IGNORE"        if env.ignore
-      this ..= " INTO #{env.name}" if env.name or into else error "sql.insert: Expected 'into <name>'"
-      this ..= " AS #{env.alias}"  if env.alias
+      this ..= " OR REPLACE"            if env.replace
+      this ..= " OR ROLLBACK"           if env.rollback
+      this ..= " OR ABORT"              if env.abort
+      this ..= " OR FAIL"               if env.fail
+      this ..= " OR IGNORE"             if env.ignore
+      this ..= " INTO #{norm env.name}" if env.name or into else error "sql.insert: Expected 'into <name>'"
+      this ..= " AS #{norm env.alias}"  if env.alias
       this ..= "("
       this ..= "#{k}, " for k in *keys[,#keys-1]
       this ..= "#{keys[#keys]}"
@@ -150,11 +150,11 @@ env = {
       this ..= " DISTINCT" if env.distinct
       this ..= " ALL"      if env.all
       this ..= " #{res}"
-      this ..= " FROM #{env.name}"    if env.name or fr else error "sql.select: Expected 'From <name>'"
-      this ..= " WHERE #{env.where}"  if env.where
-      this ..= " ORDER BY #{env.ord}" if env.ord
-      this ..= " LIMIT #{env.limit}"  if env.limit
-      this ..= " OFFSET #{env.off}"   if env.off
+      this ..= " FROM #{norm env.name}" if env.name or fr else error "sql.select: Expected 'From <name>'"
+      this ..= " WHERE #{env.where}"    if env.where
+      this ..= " ORDER BY #{env.ord}"   if env.ord
+      this ..= " LIMIT #{env.limit}"    if env.limit
+      this ..= " OFFSET #{env.off}"     if env.off
       this ..= ";"
       --
       env.emit this
@@ -168,8 +168,8 @@ env = {
       retv       = runwith fn, env.delete
       env.name or= fr
       --
-      this   = "DELETE FROM #{env.name}" if env.name else error "sql.delete: Expected 'From <name>'"
-      this ..= " WHERE #{env.where}"     if env.where
+      this   = "DELETE FROM #{norm env.name}" if env.name else error "sql.delete: Expected 'From <name>'"
+      this ..= " WHERE #{env.where}"          if env.where
       this ..= ";"
       --
       env.emit this
@@ -182,7 +182,7 @@ env = {
       --
       this   = "DROP TABLE"
       this ..= " IF EXISTS" unless env.always
-      this ..= " #{name};"
+      this ..= " #{norm name};"
       --
       env.emit this
       env.reset!
@@ -201,7 +201,7 @@ env = {
     fail:     -> env.fail     = true
     ignore:   -> env.ignore   = true
     --
-    into:  (name) -> env.name  = name
+    into:  (name) -> env.name  = norm name
     alias: (name) -> env.alias = name
     date:  (str)  -> date: "date('#{str}')"
   }
@@ -210,7 +210,7 @@ env = {
     distinct: -> env.distinct = true
     all:      -> env.all      = true
     --
-    From:  (name) -> env.name  = name
+    From:  (name) -> env.name  = norm name
     order:  (ord) -> env.order = ord
     limit:  (lim) -> env.limit = lim
     offset: (off) -> env.off   = off
@@ -224,7 +224,7 @@ env = {
   }
   -- delete
   delete: {
-    From:  (name) -> env.name  = name
+    From:  (name) -> env.name  = norm name
     where:  (any) ->
       if "table" == type any
         this = ""
