@@ -91,6 +91,7 @@ env = {
       expect 1, name, {"string"}
       expect 2, fn,   {"function"}
       retv   = runwith fn, env.create
+      keys   = [k for k, _ in pairs retv.columns]
       --
       this   = "CREATE"
       this ..= " TEMPORARY" if env.temp
@@ -98,7 +99,8 @@ env = {
       this ..= " IF NOT EXISTS" unless env.always
       this ..= " #{norm name}"
       this ..= "(\n"
-      this ..= "  #{name} #{value},\n" for name, value in pairs retv.columns
+      this ..= "  #{k} #{retv.columns[k]},\n" for k in *keys[,#keys-1]
+      this ..= "  #{keys[#keys]} #{retv.columns[keys[#keys]]}"
       this ..= ")"
       this ..= " WITHOUT ROWID" if env.without_rowid
       this ..= ";"

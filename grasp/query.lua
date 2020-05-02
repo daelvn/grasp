@@ -148,6 +148,16 @@ env = {
         "function"
       })
       local retv = runwith(fn, env.create)
+      local keys
+      do
+        local _accum_0 = { }
+        local _len_0 = 1
+        for k, _ in pairs(retv.columns) do
+          _accum_0[_len_0] = k
+          _len_0 = _len_0 + 1
+        end
+        keys = _accum_0
+      end
       local this = "CREATE"
       if env.temp then
         this = this .. " TEMPORARY"
@@ -158,9 +168,12 @@ env = {
       end
       this = this .. " " .. tostring(norm(name))
       this = this .. "(\n"
-      for name, value in pairs(retv.columns) do
-        this = this .. "  " .. tostring(name) .. " " .. tostring(value) .. ",\n"
+      local _max_0 = #keys - 1
+      for _index_0 = 1, _max_0 < 0 and #keys + _max_0 or _max_0 do
+        local k = keys[_index_0]
+        this = this .. "  " .. tostring(k) .. " " .. tostring(retv.columns[k]) .. ",\n"
       end
+      this = this .. "  " .. tostring(keys[#keys]) .. " " .. tostring(retv.columns[keys[#keys]])
       this = this .. ")"
       if env.without_rowid then
         this = this .. " WITHOUT ROWID"
