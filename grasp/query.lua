@@ -19,6 +19,14 @@ emit = function(t)
     t.str = t.str .. add
   end
 end
+local dquote
+dquote = function(txt)
+  return ("%q"):format(txt)
+end
+local squote
+squote = function(txt)
+  return "'" .. (tostring(txt)) .. "'"
+end
 local norm
 norm = function(v)
   if v == true then
@@ -31,10 +39,13 @@ norm = function(v)
     return "NULL"
   end
   if "string" == type(v) then
-    return ("%q"):format(v)
+    return squote(v)
   end
   if ("table" == type(v)) and v.date then
     return v.date
+  end
+  if ("table" == type(v)) and v.raw then
+    return v.raw
   end
   return v
 end
@@ -68,6 +79,11 @@ env = {
     date = function(str)
       return {
         date = "date('" .. tostring(str) .. "')"
+      }
+    end,
+    raw = function(str)
+      return {
+        raw = str
       }
     end,
     queryplan = "QUERY PLAN",
@@ -166,14 +182,14 @@ env = {
       if not (env.always) then
         this = this .. " IF NOT EXISTS"
       end
-      this = this .. " " .. tostring(norm(name))
+      this = this .. " " .. tostring(dquote(name))
       this = this .. "(\n"
       local _max_0 = #keys - 1
       for _index_0 = 1, _max_0 < 0 and #keys + _max_0 or _max_0 do
         local k = keys[_index_0]
-        this = this .. "  " .. tostring(k) .. " " .. tostring(retv.columns[k]) .. ",\n"
+        this = this .. "  " .. tostring(dquote(k)) .. " " .. tostring(norm(retv.columns[k])) .. ",\n"
       end
-      this = this .. "  " .. tostring(keys[#keys]) .. " " .. tostring(retv.columns[keys[#keys]])
+      this = this .. "  " .. tostring(dquote(keys[#keys])) .. " " .. tostring(norm(retv.columns[keys[#keys]]))
       this = this .. ")"
       if env.without_rowid then
         this = this .. " WITHOUT ROWID"
@@ -226,20 +242,20 @@ env = {
         this = this .. " OR IGNORE"
       end
       if env.name or into then
-        this = this .. " INTO " .. tostring(norm(env.name))
+        this = this .. " INTO " .. tostring(dquote(env.name))
       else
         error("sql.insert: Expected 'into <name>'")
       end
       if env.alias then
-        this = this .. " AS " .. tostring(norm(env.alias))
+        this = this .. " AS " .. tostring(dquote(env.alias))
       end
       this = this .. "("
       local _max_0 = #keys - 1
       for _index_0 = 1, _max_0 < 0 and #keys + _max_0 or _max_0 do
         local k = keys[_index_0]
-        this = this .. tostring(k) .. ", "
+        this = this .. tostring(dquote(k)) .. ", "
       end
-      this = this .. tostring(keys[#keys])
+      this = this .. tostring(dquote(keys[#keys]))
       this = this .. ")"
       this = this .. " VALUES (\n"
       local _max_1 = #keys - 1
@@ -280,7 +296,7 @@ env = {
       end
       this = this .. " " .. tostring(res)
       if env.name or fr then
-        this = this .. " FROM " .. tostring(norm(env.name))
+        this = this .. " FROM " .. tostring(dquote(env.name))
       else
         error("sql.select: Expected 'From <name>'")
       end
@@ -315,7 +331,7 @@ env = {
       env.name = env.name or fr
       local this
       if env.name then
-        this = "DELETE FROM " .. tostring(norm(env.name))
+        this = "DELETE FROM " .. tostring(dquote(env.name))
       else
         error("sql.delete: Expected 'From <name>'")
       end
@@ -342,7 +358,57 @@ env = {
       if not (env.always) then
         this = this .. " IF EXISTS"
       end
-      this = this .. " " .. tostring(norm(name)) .. ";"
+      this = this .. " " .. tostring(dquote(name)) .. ";"
+      env.emit(this)
+      return env.reset()
+    end,
+    update = function(name, fn)
+      expect(1, name, {
+        "string"
+      })
+      expect(2, fn, {
+        "function"
+      })
+      local retv = runwith(fn, env.update)
+      local values = retv.values
+      local keys
+      do
+        local _accum_0 = { }
+        local _len_0 = 1
+        for k, _ in pairs(values) do
+          _accum_0[_len_0] = k
+          _len_0 = _len_0 + 1
+        end
+        keys = _accum_0
+      end
+      local this = "UPDATE"
+      if env.replace then
+        this = this .. " OR REPLACE"
+      end
+      if env.rollback then
+        this = this .. " OR ROLLBACK"
+      end
+      if env.abort then
+        this = this .. " OR ABORT"
+      end
+      if env.fail then
+        this = this .. " OR FAIL"
+      end
+      if env.ignore then
+        this = this .. " OR IGNORE"
+      end
+      this = this .. " " .. tostring(dquote(name))
+      this = this .. " SET"
+      local _max_0 = #keys - 1
+      for _index_0 = 1, _max_0 < 0 and #keys + _max_0 or _max_0 do
+        local k = keys[_index_0]
+        this = this .. " " .. tostring(dquote(k)) .. " = " .. tostring(norm(values[k])) .. ","
+      end
+      this = this .. " " .. tostring(dquote(keys[#keys])) .. " = " .. tostring(norm(values[keys[#keys]]))
+      if env.where then
+        this = this .. " WHERE " .. tostring(env.where)
+      end
+      this = this .. ";"
       env.emit(this)
       return env.reset()
     end
@@ -356,6 +422,16 @@ env = {
     end,
     without_rowid = function()
       env.without_rowid = true
+    end,
+    date = function(str)
+      return {
+        date = "date('" .. tostring(str) .. "')"
+      }
+    end,
+    raw = function(str)
+      return {
+        raw = str
+      }
     end
   },
   insert = {
@@ -384,6 +460,53 @@ env = {
       return {
         date = "date('" .. tostring(str) .. "')"
       }
+    end,
+    raw = function(str)
+      return {
+        raw = str
+      }
+    end
+  },
+  update = {
+    replace = function()
+      env.replace = true
+    end,
+    rollback = function()
+      env.rollback = true
+    end,
+    abort = function()
+      env.abort = true
+    end,
+    fail = function()
+      env.fail = true
+    end,
+    ignore = function()
+      env.ignore = true
+    end,
+    date = function(str)
+      return {
+        date = "date('" .. tostring(str) .. "')"
+      }
+    end,
+    raw = function(str)
+      return {
+        raw = str
+      }
+    end,
+    where = function(any)
+      local oldwhere = env.where
+      if "table" == type(any) then
+        local this = ""
+        for k, v in pairs(any) do
+          this = this .. tostring(dquote(k)) .. " = " .. tostring(norm(v)) .. " AND"
+        end
+        env.where = this:match("(.+) AND")
+      else
+        env.where = any
+      end
+      if oldwhere then
+        env.where = tostring(oldwhere) .. " AND " .. tostring(env.where)
+      end
     end
   },
   select = {
@@ -392,6 +515,16 @@ env = {
     end,
     all = function()
       env.all = true
+    end,
+    date = function(str)
+      return {
+        date = "date('" .. tostring(str) .. "')"
+      }
+    end,
+    raw = function(str)
+      return {
+        raw = str
+      }
     end,
     From = function(name)
       env.name = norm(name)
@@ -406,30 +539,48 @@ env = {
       env.off = off
     end,
     where = function(any)
+      local oldwhere = env.where
       if "table" == type(any) then
         local this = ""
         for k, v in pairs(any) do
-          this = this .. tostring(k) .. " = " .. tostring(norm(v)) .. " AND"
+          this = this .. tostring(dquote(k)) .. " = " .. tostring(norm(v)) .. " AND"
         end
         env.where = this:match("(.+) AND")
       else
         env.where = any
       end
+      if oldwhere then
+        env.where = tostring(oldwhere) .. " AND " .. tostring(env.where)
+      end
     end
   },
   delete = {
+    date = function(str)
+      return {
+        date = "date('" .. tostring(str) .. "')"
+      }
+    end,
+    raw = function(str)
+      return {
+        raw = str
+      }
+    end,
     From = function(name)
       env.name = norm(name)
     end,
     where = function(any)
+      local oldwhere = env.where
       if "table" == type(any) then
         local this = ""
         for k, v in pairs(any) do
-          this = this .. tostring(k) .. " = " .. tostring(norm(v)) .. " AND"
+          this = this .. tostring(dquote(k)) .. " = " .. tostring(norm(v)) .. " AND"
         end
         env.where = this:match("(.+) AND")
       else
         env.where = any
+      end
+      if oldwhere then
+        env.where = tostring(oldwhere) .. " AND " .. tostring(env.where)
       end
     end
   },

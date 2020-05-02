@@ -29,6 +29,7 @@ As such, this README will be a close-looking copy of the clutch one, but in Moon
       - [select](#select)
       - [delete](#delete)
       - [drop](#drop)
+      - [update](#update)
   - [Installing](#installing)
   - [Tests](#tests)
   - [License](#license)
@@ -277,6 +278,17 @@ sql ->
 sql ->
   drop "tablename"
   drop "tablename", -> ifexists!
+```
+
+#### update
+
+```moon
+sql ->
+  update "tablename", ->
+    where id: 1
+    values:
+      login: "user"
+      email: "ex@example.com"
 ```
 
 ## Installing
