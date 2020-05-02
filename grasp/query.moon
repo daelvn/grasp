@@ -13,8 +13,7 @@ runwith = (fn, env, ...) ->
 quickcopy = (t) -> {unpack t}
 
 -- emitting function
-emit = (t) -> (add) ->
-  t.str ..= add
+emit = (t) -> (add) -> t.str ..= add
 
 -- quoting
 dquote = (txt) -> ("%q")\format txt
