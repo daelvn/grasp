@@ -20,7 +20,8 @@ dependencies = {
 build = {
   type = "builtin",
   modules = {
-    ["grasp.init"] = "grasp/init.lua",
-    ["grasp.util"] = "grasp/util.lua",
+    ["grasp.init"]  = "grasp/init.lua",
+    ["grasp.util"]  = "grasp/util.lua",
+    ["grasp.query"] = "grasp/query.lua",
   }
 }

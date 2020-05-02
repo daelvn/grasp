@@ -6,6 +6,33 @@ Ok, I admit it, the only reason I made this is because Clutch wouldn't run on 5.
 
 As such, this README will be a close-looking copy of the clutch one, but in MoonScript, and with my syntax.
 
+## Table of contents
+
+- [Grasp](#grasp)
+  - [Table of contents](#table-of-contents)
+  - [Opening a database](#opening-a-database)
+  - [Querying the database](#querying-the-database)
+  - [Binding parameters](#binding-parameters)
+    - [Named parameters](#named-parameters)
+    - [Anonymous/positional parameters](#anonymouspositional-parameters)
+  - [Updating the database](#updating-the-database)
+  - [Preparing statements](#preparing-statements)
+    - [Resets](#resets)
+  - [Transactions](#transactions)
+  - [Error handling](#error-handling)
+  - [Query building](#query-building)
+    - [Supported statements](#supported-statements)
+      - [explain](#explain)
+      - [Transactions and Savepoints](#transactions-and-savepoints)
+      - [create](#create)
+      - [insert and replace](#insert-and-replace)
+      - [select](#select)
+      - [delete](#delete)
+      - [drop](#drop)
+  - [Installing](#installing)
+  - [Tests](#tests)
+  - [License](#license)
+
 ## Opening a database
 
 ```moon
@@ -137,6 +164,120 @@ import Transaction from require "grasp"
 ## Error handling
 
 Unlike Clutch, this will not error on user-called functions, but instead return a boolean status and the error code.
+
+## Query building
+
+Grasp 1.2 implements a query builder for SQL. It ain't much, but it's honest work. You use it by importing the `sql` function in `grasp.query`. It takes a function, and a lot of magic happens there, just see for yourself!
+
+```moon
+sql ->
+  create "tbl", -> columns:
+    ee: "TEXT NOT NULL"
+```
+
+### Supported statements
+
+#### explain
+
+Takes any SQL builder, and precedes it with `EXPLAIN` or `EXPLAIN QUERY PLAN`.
+
+```moon
+sql -> explain queryplan, -> ...
+sql -> explain -> ...
+```
+
+#### Transactions and Savepoints
+
+```moon
+sql ->
+  -- begin transaction
+  begin!
+  begin deferred
+  begin immediate
+  begin exclusive
+  -- rollback transaction
+  rollback!
+  -- end transaction
+  commit!
+  End!
+
+sql ->
+  -- savepoints
+  savepoint "name"
+  release   "name"
+  rollback  "name
+```
+
+#### create
+
+Well, more like `CREATE TABLE`:
+
+```moon
+sql -> create "tablename", ->
+  temporary!     -- TEMPORARY
+  always!        -- removes IF NOT EXISTS
+  without_rowid! -- adds WITHOUT ROWID
+  columns:
+    whatever: "TEXT NOT NULL" -- and such
+```
+
+#### insert and replace
+
+`replace` works pretty much the same, but emitting `REPLACE` instead
+
+```moon
+sql ->
+  insert ->
+    replace!   -- OR REPLACE
+    rollback!  -- OR ROLLBACK
+    abort!     -- OR ABORT
+    fail!      -- OR FAIL
+    ignore!    -- OR IGNORE
+    into "tablename"
+    alias "whatever" -- AS whatever
+    values:
+      column: value
+  -- alternatively
+  insert into "tablename", -> values:
+    column: value
+```
+
+#### select
+
+```moon
+sql ->
+  select "*", ->
+    distinct!
+    all!
+    From "tablename"
+    where "expr"
+    where a: v     -- WHERE a = v
+    order: "expr"  -- ORDER BY expr
+    limit: "expr"  -- LIMIT expr
+    offset: "expr" -- OFFSET expr
+  -- alternatively
+  select "*", From "tablename", ->
+```
+
+#### delete
+
+```moon
+sql ->
+  delete ->
+    From "tablename"
+    where "expr"
+    where a: v     -- WHERE a = v
+  -- alternatively
+  delete From "tablename", -> where a: v
+```
+
+#### drop
+
+```moon
+sql ->
+  drop "tablename"
+  drop "tablename", -> ifexists!
+```
 
 ## Installing
 
