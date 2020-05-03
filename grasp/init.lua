@@ -68,9 +68,13 @@ Database = function(filename, attr)
   if attr.cache == "private" then
     flags = flags + OPEN_PRIVATECACHE
   end
+  local db, code, msg = sqlite.open(filename, flags)
+  if not (db) then
+    return nil, code, msg
+  end
   return typeset({
     filename = filename,
-    db = sqlite.open(filename, flags),
+    db = db,
     attributes = attr
   }, "Database")
 end

@@ -58,10 +58,13 @@ Database = (filename, attr={create: true, rw: true}) ->
   flags += OPEN_FULLMUTEX    if attr.mutex
   flags += OPEN_SHAREDCACHE  if attr.cache == "shared"
   flags += OPEN_PRIVATECACHE if attr.cache == "private"
+  -- open db
+  db, code, msg = sqlite.open filename, flags
+  return nil, code, msg unless db
   -- return object
   return typeset {
     :filename
-    db:         sqlite.open filename, flags
+    :db
     attributes: attr
   }, "Database"
 
