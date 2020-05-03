@@ -2,7 +2,7 @@ grasp            = require "grasp"
 import typeof from require "grasp.util"
 
 describe "grasp", ->
-  import query from grasp
+  import query, squery from grasp
   local db
 
   setup ->
@@ -75,6 +75,19 @@ describe "grasp", ->
   it "positional parameters", ->
     for r in (query db) "select * from p where weight = ?2 AND color = ?1", {"Red", 12}
       assert.is.truthy r.PNAME
+
+  it "pgmoon-like queries", ->
+    assert.are.same {{
+      PNUM:   5
+      PNAME:  "Cam"
+      COLOR:  "Blue"
+      WEIGHT: 12
+      CITY:   "Paris"
+    }}, (squery db) "select * from p where pnum = 5;"
+    assert.are.same {
+      affected_rows: 1
+    }, (squery db) "insert into p values (7, 'Screw', 'Green', 13, 'Madrid');"
+    assert.is.true (squery db) "update p set WEIGHT = 12 where pnum = 8;"
 
   describe "prepared statements", ->
     import Statement from grasp

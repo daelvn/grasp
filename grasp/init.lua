@@ -15,6 +15,7 @@ local OPEN_FULLMUTEX = sqlite.OPEN_FULLMUTEX
 local OPEN_SHAREDCACHE = sqlite.OPEN_SHAREDCACHE
 local OPEN_PRIVATECACHE = sqlite.OPEN_PRIVATECACHE
 local OK = sqlite.OK
+local changesIn
 local Database
 Database = function(filename, attr)
   if attr == nil then
@@ -99,7 +100,8 @@ Statement = function(self)
     end
     return typeset({
       sql = sql,
-      stat = stat
+      stat = stat,
+      db = self
     }, "Statement")
   end
 end
@@ -206,6 +208,26 @@ queryone = function(self)
   self.stat:reset()
   return r
 end
+local squery
+squery = function(self)
+  expect(1, self, {
+    "Statement"
+  })
+  local r = queryall(self)
+  self.stat:reset()
+  if #r > 0 then
+    return r
+  else
+    local changes = (changesIn(self.db))
+    if changes > 0 then
+      return {
+        affected_rows = changes
+      }
+    else
+      return true
+    end
+  end
+end
 local execute
 execute = function(self)
   expect(1, self, {
@@ -233,7 +255,6 @@ errorFor = function(self)
   })
   return (self.db:errcode()), (self.db:errmsg())
 end
-local changesIn
 changesIn = function(self)
   expect(1, self, {
     "Database"
@@ -404,6 +425,31 @@ queryone = function(self)
     return queryone(stmt)
   end
 end
+local _Statement_squery = squery
+squery = function(self)
+  if "Statement" == typeof(self) then
+    return _Statement_squery(self)
+  end
+  expect(1, self, {
+    "Database"
+  })
+  return function(sql, bindt)
+    if bindt == nil then
+      bindt = { }
+    end
+    expect(2, sql, {
+      "string"
+    })
+    expect(3, bindt, {
+      "table"
+    })
+    local stmt = (Statement(self))(sql)
+    if not ((bind(stmt))(bindt)) then
+      error("squery : Failed to bind to [[" .. tostring(sql) .. "]]")
+    end
+    return squery(stmt)
+  end
+end
 local Transaction
 Transaction = function(self)
   expect(1, self, {
@@ -452,6 +498,7 @@ return {
   queryall = queryall,
   queryone = queryone,
   execute = execute,
+  squery = squery,
   Database = Database,
   close = close,
   errorFor = errorFor,

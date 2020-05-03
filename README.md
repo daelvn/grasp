@@ -12,6 +12,7 @@ As such, this README will be a close-looking copy of the clutch one, but in Moon
   - [Table of contents](#table-of-contents)
   - [Opening a database](#opening-a-database)
   - [Querying the database](#querying-the-database)
+    - [`squery`](#squery)
   - [Binding parameters](#binding-parameters)
     - [Named parameters](#named-parameters)
     - [Anonymous/positional parameters](#anonymouspositional-parameters)
@@ -86,6 +87,15 @@ These are all equivalent, so it's all up to preference. There's `queryone` and `
 
 - `queryone db sql`: returns the first row out of all results.
 - `queryall db sql`: returns a table of all rows returned.
+
+### `squery`
+
+As of Grasp 1.3, there is a new function `squery` which works similarly to `queryall`, but if no results were returned it will:
+
+- Return `{affected_rows: n}` if there's any affected rows.
+- Return `true` otherwise.
+
+This is pretty much made to mimic `query` in [pgmoon](https://github.com/leafo/pgmoon), since I might be using Grasp to write a Lapis backend for SQLite.
 
 ## Binding parameters
 

@@ -17,6 +17,8 @@ OPEN_SHAREDCACHE  = sqlite.OPEN_SHAREDCACHE
 OPEN_PRIVATECACHE = sqlite.OPEN_PRIVATECACHE
 OK                = sqlite.OK
 
+local changesIn
+
 -- Database :: (string, table) -> Database
 -- Database {
 --   db         :: userdata
@@ -86,7 +88,7 @@ Statement ==>
     stat = @db\prepare sql
     error "Could not prepare statement: [[#{sql}]], (#{stat})" if "userdata" != typeof stat
     return typeset {
-      :sql, :stat
+      :sql, :stat, db: @
     }, "Statement"
 
 -- Statement functions
@@ -166,7 +168,22 @@ queryone ==>
   @stat\reset!
   return r
 
+-- squery :: Statement -> table|boolean
+squery ==>
+  expect 1, @, {"Statement"}
+  r = queryall @
+  @stat\reset!
+  if #r > 0
+    return r
+  else
+    changes = (changesIn @db)
+    if changes > 0
+      return affected_rows: changes
+    else
+      return true
+
 -- execute :: Statement -> (boolean, number)
+-- TODO return number of changes
 execute ==>
   expect 1, @, {"Statement"}
   status = @stat\step!
@@ -294,6 +311,19 @@ queryone ==>
       error "queryone : Failed to bind to [[#{sql}]]"
     queryone stmt
 
+-- squery :: Database -> (string, table) -> table|boolean
+_Statement_squery = squery
+squery ==>
+  return _Statement_squery @ if "Statement" == typeof @
+  expect 1, @, {"Database"}
+  return (sql, bindt={}) ->
+    expect 2, sql,   {"string"}
+    expect 3, bindt, {"table"}
+    stmt = (Statement @) sql
+    unless (bind stmt) bindt
+      error "squery : Failed to bind to [[#{sql}]]"
+    squery stmt
+
 -- Transaction :: Database -> (Database -> boolean) -> boolean
 Transaction ==>
   expect 1, @, {"Database"}
@@ -319,7 +349,7 @@ Transaction ==>
   :Statement
   :finalize, :isOpen, :bind, :bindOne, :bindMany
   :query, :query1, :iquery, :queryall, :queryone
-  :execute
+  :execute, :squery
 
   :Database
   :close, :errorFor, :changesIn, :allChangesIn, :update
