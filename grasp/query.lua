@@ -1,17 +1,9 @@
 local expect
 expect = require("grasp.util").expect
-local inspect = require("inspect")
-local unpack = unpack or table.unpack
 local runwith
 runwith = function(fn, env, ...)
   setfenv(fn, env)
   return fn(...)
-end
-local quickcopy
-quickcopy = function(t)
-  return {
-    unpack(t)
-  }
 end
 local emit
 emit = function(t)
@@ -106,7 +98,7 @@ env = {
       }
       local oldemit = env.emit
       env.emit = emit(resl)
-      local retv = runwith(fn, env.sql)
+      runwith(fn, env.sql)
       env.emit = oldemit
       if attr == "QUERY PLAN" then
         return env.emit("EXPLAIN QUERY PLAN " .. resl.str)
@@ -285,7 +277,7 @@ env = {
         "string",
         "nil"
       })
-      local retv = runwith(fn, env.select)
+      runwith(fn, env.select)
       env.name = env.name or fr
       local this = "SELECT"
       if env.distinct then
@@ -295,7 +287,7 @@ env = {
         this = this .. " ALL"
       end
       this = this .. " " .. tostring(res)
-      if env.name or fr then
+      if env.name then
         this = this .. " FROM " .. tostring(dquote(env.name))
       else
         error("sql.select: Expected 'From <name>'")
@@ -327,7 +319,7 @@ env = {
         "string",
         "nil"
       })
-      local retv = runwith(fn, env.delete)
+      runwith(fn, env.delete)
       env.name = env.name or fr
       local this
       if env.name then
@@ -350,9 +342,8 @@ env = {
         "function",
         "nil"
       })
-      local retv
       if fn then
-        retv = runwith(fn, env.drop)
+        runwith(fn, env.drop)
       end
       local this = "DROP TABLE"
       if not (env.always) then
@@ -527,7 +518,7 @@ env = {
       }
     end,
     From = function(name)
-      env.name = norm(name)
+      env.name = name
     end,
     order = function(ord)
       env.order = ord
@@ -566,7 +557,7 @@ env = {
       }
     end,
     From = function(name)
-      env.name = norm(name)
+      env.name = name
     end,
     where = function(any)
       local oldwhere = env.where

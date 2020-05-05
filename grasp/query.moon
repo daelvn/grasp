@@ -2,15 +2,11 @@
 -- SQLite Query Builder
 -- By daelvn
 import expect from require "grasp.util"
-inspect = require "inspect"
-unpack or= table.unpack
 
 -- Run with environment
 runwith = (fn, env, ...) ->
   setfenv fn, env
   return fn ...
--- quickcopy
-quickcopy = (t) -> {unpack t}
 
 -- emitting function
 emit = (t) -> (add) -> t.str ..= add
@@ -59,7 +55,7 @@ env = {
       resl     = str: ""
       oldemit  = env.emit
       env.emit = emit resl
-      retv     = runwith fn, env.sql
+      runwith fn, env.sql
       env.emit = oldemit
       --
       if attr == "QUERY PLAN"
@@ -150,14 +146,14 @@ env = {
       expect 1, res, {"string"}
       expect 2, fn,  {"function"}
       expect 3, fr,  {"string", "nil"}
-      retv       = runwith fn, env.select
+      runwith fn, env.select
       env.name or= fr
       --
       this   = "SELECT"
       this ..= " DISTINCT" if env.distinct
       this ..= " ALL"      if env.all
       this ..= " #{res}"
-      this ..= " FROM #{dquote env.name}" if env.name or fr else error "sql.select: Expected 'From <name>'"
+      this ..= " FROM #{dquote env.name}" if env.name else error "sql.select: Expected 'From <name>'"
       this ..= " WHERE #{env.where}"    if env.where
       this ..= " ORDER BY #{env.ord}"   if env.ord
       this ..= " LIMIT #{env.limit}"    if env.limit
@@ -172,7 +168,7 @@ env = {
     delete: (fn, fr) ->
       expect 1, fn,  {"function"}
       expect 2, fr,  {"string", "nil"}
-      retv       = runwith fn, env.delete
+      runwith fn, env.delete
       env.name or= fr
       --
       this   = "DELETE FROM #{dquote env.name}" if env.name else error "sql.delete: Expected 'From <name>'"
@@ -185,7 +181,7 @@ env = {
     drop: (name, fn) ->
       expect 1, name, {"string"}
       expect 2, fn,   {"function", "nil"}
-      retv = runwith fn, env.drop if fn
+      runwith fn, env.drop if fn
       --
       this   = "DROP TABLE"
       this ..= " IF EXISTS" unless env.always
@@ -266,7 +262,7 @@ env = {
     --
     date:   (str) -> date: "date('#{str}')"
     raw:    (str) -> raw: str
-    From:  (name) -> env.name  = norm name
+    From:  (name) -> env.name  = name
     order:  (ord) -> env.order = ord
     limit:  (lim) -> env.limit = lim
     offset: (off) -> env.off   = off
@@ -284,7 +280,7 @@ env = {
   delete: {
     date:    (str) -> date: "date('#{str}')"
     raw:     (str) -> raw: str
-    From:  (name) -> env.name  = norm name
+    From:  (name) -> env.name = name
     where:  (any) ->
       oldwhere = env.where
       if "table" == type any
